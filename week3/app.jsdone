@@ -1,0 +1,134 @@
+const express = require("express");
+const helmet = require("helmet");
+const bcrypt = require("bcrypt");
+const csurf = require("csurf");
+const session = require("express-session");
+
+const app = express();
+
+/* SECURITY */
+app.use(helmet());
+app.disable("x-powered-by");
+
+/* SESSION */
+app.use(session({
+    secret: "secret123",
+    resave: false,
+    saveUninitialized: true
+}));
+
+/* MIDDLEWARE */
+app.use(express.urlencoded({ extended: true }));
+
+/* CSRF */
+const csrfProtection = csurf();
+
+/* HELPERS */
+function isValidUsername(username) {
+    return /^[a-zA-Z0-9]{3,15}$/.test(username);
+}
+
+function isValidPassword(password) {
+    return password && password.length >= 6;
+}
+
+/* DATABASE */
+let users = [];
+let currentUser = null;
+
+/* HOME PAGE (WITH CSRF TOKEN INSIDE) */
+app.get("/", csrfProtection, (req, res) => {
+    res.send(`
+    <html>
+    <head>
+        <title>Secure App</title>
+        <link rel="stylesheet" href="/style.css">
+    </head>
+    <body>
+
+    <div class="container">
+
+    <h2>Register</h2>
+    <form method="POST" action="/register">
+        <input type="hidden" name="_csrf" value="${req.csrfToken()}">
+        <input type="text" name="username" placeholder="Username" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <button type="submit">Register</button>
+    </form>
+
+    <h2>Login</h2>
+    <form method="POST" action="/login">
+        <input type="hidden" name="_csrf" value="${req.csrfToken()}">
+        <input type="text" name="username" placeholder="Username" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <button type="submit">Login</button>
+    </form>
+
+    </div>
+
+    </body>
+    </html>
+    `);
+});
+
+/* REGISTER */
+app.post("/register", csrfProtection, async (req, res) => {
+    const { username = "", password = "" } = req.body;
+
+    if (!isValidUsername(username) || !isValidPassword(password)) {
+        return res.send("Invalid input <br><a href='/'>Back</a>");
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    users.push({ username, password: hashedPassword });
+
+    res.redirect("/");
+});
+
+/* LOGIN */
+app.post("/login", csrfProtection, async (req, res) => {
+    const { username = "", password = "" } = req.body;
+
+    const user = users.find(u => u.username === username);
+    if (!user) return res.send("Invalid credentials <br><a href='/'>Back</a>");
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (isMatch) {
+        currentUser = username;
+        res.redirect("/dashboard");
+    } else {
+        res.send("Invalid credentials <br><a href='/'>Back</a>");
+    }
+});
+
+/* DASHBOARD */
+app.get("/dashboard", (req, res) => {
+    if (!currentUser) {
+        return res.send("Please login first <br><a href='/'>Go Back</a>");
+    }
+
+    res.send(`<h2>Welcome ${currentUser}</h2><a href="/logout">Logout</a>`);
+});
+
+/* LOGOUT */
+app.get("/logout", (req, res) => {
+    currentUser = null;
+    res.redirect("/");
+});
+
+/* ERROR HANDLER */
+app.use((err, req, res, next) => {
+    if (err.code === "EBADCSRFTOKEN") {
+        return res.send("❌ Invalid CSRF token. Refresh page.");
+    }
+    next(err);
+});
+
+/* STATIC CSS */
+app.use(express.static("public"));
+
+/* START */
+app.listen(3000, () => {
+    console.log("🚀 Running on http://localhost:3000");
+});

@@ -1,0 +1,46 @@
+const express = require("express");
+const app = express();
+
+app.use(express.json());
+app.use(express.static(__dirname));
+
+// ❌ NO helmet
+// ❌ NO validation
+// ❌ NO hashing
+
+let users = [];
+
+/* HOME */
+app.get("/", (req, res) => {
+    res.sendFile(__dirname + "/index.html");
+});
+
+/* REGISTER (VULNERABLE) */
+app.post("/register", (req, res) => {
+
+    const username = req.body.username; // ❌ no sanitization
+    const password = req.body.password; // ❌ plain text
+
+    users.push({ username, password });
+
+    res.send("User registered (INSECURE)");
+});
+
+/* LOGIN (VULNERABLE) */
+app.post("/login", (req, res) => {
+    const username = req.body.username;
+    const password = req.body.password;
+
+    const user = users.find(u => u.username === username && u.password === password);
+
+    if (user) {
+        res.send("Login success (INSECURE)");
+    } else {
+        res.send("Invalid credentials");
+    }
+});
+
+
+app.listen(3000, () => {
+    console.log("Vulnerable app running on port 3000");
+});
