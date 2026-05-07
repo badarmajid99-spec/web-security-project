@@ -1,0 +1,15 @@
+# Week 3 - Advanced Security & Reporting
+
+## Tasks Completed
+- Performed penetration testing
+- Added Winston logging
+- Implemented HTTPS using SSL certificates
+- Created security findings reports
+- Documented vulnerabilities and fixes
+
+## Security Features
+- HTTPS encryption
+- Login monitoring
+- Security event logging
+- Rate limiting
+- API access control
