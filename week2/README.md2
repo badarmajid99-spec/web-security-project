@@ -1,0 +1,18 @@
+# Week 2 - Secure Web Application Development
+
+## Tasks Completed
+- Built secure Express.js application
+- Implemented Helmet security headers
+- Added CSRF protection
+- Implemented session management
+- Added password hashing using bcrypt
+- Protected APIs
+- Added rate limiting
+
+## Technologies Used
+- Node.js
+- Express.js
+- Helmet
+- bcrypt
+- express-session
+- csurf
