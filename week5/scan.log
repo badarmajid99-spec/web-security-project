@@ -1,0 +1,53 @@
+
+-------------------------------------------------------------------------------
+
+
+/home/kali/web-security-project/week2/node_modules/.bin/node-gyp-build-optional: Symbolic link
+/home/kali/web-security-project/week2/node_modules/.bin/node-gyp-build: Symbolic link
+/home/kali/web-security-project/week2/node_modules/.bin/node-gyp-build-test: Symbolic link
+/home/kali/web-security-project/week2/node_modules/node-addon-api/nothing.c: Empty file
+/home/kali/web-security-project/week2/web-security-project/week2/node_modules/.bin/node-gyp-build-optional: Symbolic link
+/home/kali/web-security-project/week2/web-security-project/week2/node_modules/.bin/node-gyp-build: Symbolic link
+/home/kali/web-security-project/week2/web-security-project/week2/node_modules/.bin/node-gyp-build-test: Symbolic link
+/home/kali/web-security-project/week2/web-security-project/week2/node_modules/node-addon-api/nothing.c: Empty file
+/home/kali/web-security-project/week3/node_modules/.bin/node-gyp-build-optional: Symbolic link
+/home/kali/web-security-project/week3/node_modules/.bin/node-gyp-build: Symbolic link
+/home/kali/web-security-project/week3/node_modules/.bin/node-gyp-build-test: Symbolic link
+/home/kali/web-security-project/week3/node_modules/node-addon-api/nothing.c: Empty file
+/home/kali/web-security-project/week3/web-security-project/week2/node_modules/.bin/node-gyp-build-optional: Symbolic link
+/home/kali/web-security-project/week3/web-security-project/week2/node_modules/.bin/node-gyp-build: Symbolic link
+/home/kali/web-security-project/week3/web-security-project/week2/node_modules/.bin/node-gyp-build-test: Symbolic link
+/home/kali/web-security-project/week3/web-security-project/week2/node_modules/node-addon-api/nothing.c: Empty file
+/home/kali/web-security-project/week4/node_modules/.bin/rc: Symbolic link
+/home/kali/web-security-project/week4/node_modules/.bin/semver: Symbolic link
+/home/kali/web-security-project/week4/node_modules/.bin/nopt: Symbolic link
+/home/kali/web-security-project/week4/node_modules/.bin/node-gyp-build-optional: Symbolic link
+/home/kali/web-security-project/week4/node_modules/.bin/node-gyp-build: Symbolic link
+/home/kali/web-security-project/week4/node_modules/.bin/node-gyp-build-test: Symbolic link
+/home/kali/web-security-project/week4/node_modules/.bin/node-which: Symbolic link
+/home/kali/web-security-project/week4/node_modules/.bin/node-gyp: Symbolic link
+/home/kali/web-security-project/week4/node_modules/.bin/prebuild-install: Symbolic link
+/home/kali/web-security-project/week4/node_modules/tar-fs/test/fixtures/e/directory/.ignore: Empty file
+/home/kali/web-security-project/week4/node_modules/tar-fs/test/fixtures/e/file: Empty file
+/home/kali/web-security-project/week4/node_modules/tar-fs/test/fixtures/d/sub-files/file3: Empty file
+/home/kali/web-security-project/week4/node_modules/tar-fs/test/fixtures/d/sub-files/file4: Empty file
+/home/kali/web-security-project/week4/node_modules/tar-fs/test/fixtures/d/file2: Empty file
+/home/kali/web-security-project/week4/node_modules/tar-fs/test/fixtures/d/sub-dir/file5: Empty file
+/home/kali/web-security-project/week4/node_modules/tar-fs/test/fixtures/d/file1: Empty file
+/home/kali/web-security-project/week4/node_modules/undici/lib/llhttp/.gitkeep: Empty file
+/home/kali/web-security-project/week4/node_modules/node-addon-api/nothing.c: Empty file
+/home/kali/web-security-project/week4/node_modules/napi-build-utils/index.md: Empty file
+/home/kali/web-security-project/week4/node_modules/node-gyp/gyp/pylib/gyp/generator/__init__.py: Empty file
+/home/kali/web-security-project/week4/node_modules/node-gyp/gyp/pylib/packaging/py.typed: Empty file
+
+----------- SCAN SUMMARY -----------
+Known viruses: 3627866
+Engine version: 1.4.4
+Scanned directories: 1752
+Scanned files: 11363
+Infected files: 0
+Data scanned: 80.46 MB
+Data read: 43.53 MB (ratio 1.85:1)
+Time: 263.284 sec (4 m 23 s)
+Start Date: 2026:05:23 17:05:36
+End Date:   2026:05:23 17:10:00
