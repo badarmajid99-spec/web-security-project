@@ -25,7 +25,20 @@ const logger = winston.createLogger({
 });
 
 /* 🔒 SECURITY */
-app.use(helmet());
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'"],
+      imgSrc: ["'self'", "data:"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+      formAction: ["'self'"]
+    }
+  })
+);
 app.disable("x-powered-by");
 
 /* 🔧 MIDDLEWARE */
@@ -41,7 +54,13 @@ app.use(session({
 }));
 
 /* 🔒 CSRF */
-const csrfProtection = csurf({ cookie: true });
+app.use(csrf({
+  cookie: {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'strict'
+  }
+}));
 
 const loginLimiter = rateLimit({
     windowMs: 15* 60 * 1000,

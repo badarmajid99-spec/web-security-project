@@ -1,9 +1,5 @@
 const express = require("express");
-const sqlite3 = require("sqlite3");
-const { open } = require("sqlite");
-const cors = require("cors");
 const https = require("https");
-const http = require("http");
 const fs = require("fs");
 const rateLimit = require("express-rate-limit");
 const winston = require("winston");
@@ -15,25 +11,8 @@ const cookieParser = require("cookie-parser");
 
 const app = express();
 
-/* ================= DATABASE ================= */
-let db;
-
-async function initDB() {
-    db = await open({
-        filename: "./database.db",
-        driver: sqlite3.Database
-    });
-
-    await db.exec(`
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE,
-            password TEXT
-        )
-    `);
-
-    console.log("✅ SQLite Database Connected");
-}
+/* ================= STATIC FILES ================= */
+app.use(express.static("public"));
 
 /* ================= LOGGER ================= */
 const logger = winston.createLogger({
@@ -49,57 +28,100 @@ const logger = winston.createLogger({
     ]
 });
 
-/* ================= SECURITY ================= */
-app.use(helmet());
+/* ================= SECURITY HEADERS ================= */
+app.use(
+    helmet({
+        contentSecurityPolicy: {
+            directives: {
+                defaultSrc: ["'self'"],
+                scriptSrc: ["'self'"],
+                styleSrc: ["'self'"],
+                imgSrc: ["'self'", "data:"],
+                fontSrc: ["'self'"],
+                objectSrc: ["'none'"],
+                frameAncestors: ["'none'"],
+                formAction: ["'self'"]
+            }
+        },
+
+        xContentTypeOptions: true,
+
+        referrerPolicy: {
+            policy: "no-referrer"
+        },
+
+        permissionsPolicy: {
+            features: {
+                camera: [],
+                microphone: [],
+                geolocation: []
+            }
+        },
+
+        hsts: {
+            maxAge: 31536000,
+            includeSubDomains: true,
+            preload: true
+        }
+    })
+);
+
 app.disable("x-powered-by");
 
+/* ================= CACHE CONTROL ================= */
 app.use((req, res, next) => {
-    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader(
+        "Cache-Control",
+        "no-store, no-cache, must-revalidate, private"
+    );
+
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+
     next();
 });
 
 /* ================= MIDDLEWARE ================= */
-app.use(cors({ origin: true, credentials: true }));
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.use(cookieParser());
 
 /* ================= SESSION ================= */
 app.use(session({
-    secret: "kali-secret-123",
+    secret: process.env.SESSION_SECRET || "veryStrongSecretKey123",
     resave: false,
     saveUninitialized: false,
+
     cookie: {
         maxAge: 600000,
         httpOnly: true,
-        secure: false,
-        sameSite: "lax"
+        secure: true,
+        sameSite: "strict"
     }
 }));
 
 /* ================= CSRF ================= */
-const csrfProtection = csurf({ cookie: true });
-
-/* ================= RATE LIMIT ================= */
-const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 4,
-    handler: (req, res) => {
-        return res.status(429).send("Too many attempts");
+const csrfProtection = csurf({
+    cookie: {
+        httpOnly: true,
+        secure: true,
+        sameSite: "strict"
     }
 });
 
-/* ================= STYLE ================= */
-const style = `
-<style>
-body { font-family: Arial; background: #2c3e50; margin: 0; }
-.container { background: white; padding: 20px; margin: 50px auto; width: 300px; }
-input, button { width: 100%; padding: 10px; margin: 5px 0; }
-button { background: #3498db; color: white; border: none; }
-.navbar { background: #1a252f; color: white; padding: 10px; }
-</style>
-`;
+/* ================= RATE LIMITER ================= */
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 4,
 
-/* ================= HELPERS ================= */
+    message: `
+        <h2>❌ Too many attempts</h2>
+        <p>You are temporarily blocked</p>
+        <a href="/">Go Back</a>
+    `
+});
+
+/* ================= VALIDATION HELPERS ================= */
 function isValidUsername(username) {
     return /^[a-zA-Z0-9]{3,15}$/.test(username);
 }
@@ -108,148 +130,305 @@ function isValidPassword(password) {
     return password && password.length >= 6;
 }
 
-/* ================= AUTH ================= */
-function apiKeyAuth(req, res, next) {
-    const apiKey = req.headers["x-api-key"];
+/* ================= DATABASE (TEMP MEMORY) ================= */
+let users = [];
 
-    if (apiKey !== "secure-api-key-123") {
-        return res.status(401).json({ message: "Invalid API Key" });
-    }
+/* ================= ROUTES ================= */
 
-    next();
-}
-
-/* ================= HOME ================= */
+/* HOME PAGE */
 app.get("/", csrfProtection, (req, res) => {
+
     res.send(`
     <html>
-    <head>${style}</head>
-    <body>
+
+    <head>
+        <title>Secure App</title>
+        <link rel="stylesheet" href="/style.css">
+    </head>
+
+    <body class="auth-page">
+
         <div class="container">
 
             <h2>Register</h2>
+
             <form method="POST" action="/register">
+
                 <input type="hidden" name="_csrf" value="${req.csrfToken()}">
-                <input name="username" placeholder="Username">
-                <input type="password" name="password" placeholder="Password">
-                <button>Register</button>
+
+                <input
+                    name="username"
+                    placeholder="Username"
+                    required
+                >
+
+                <input
+                    type="password"
+                    name="password"
+                    placeholder="Password"
+                    required
+                >
+
+                <button type="submit">
+                    Register
+                </button>
+
             </form>
 
             <h2>Login</h2>
+
             <form method="POST" action="/login">
+
                 <input type="hidden" name="_csrf" value="${req.csrfToken()}">
-                <input name="username" placeholder="Username">
-                <input type="password" name="password">
-                <button>Login</button>
+
+                <input
+                    name="username"
+                    placeholder="Username"
+                    required
+                >
+
+                <input
+                    type="password"
+                    name="password"
+                    placeholder="Password"
+                    required
+                >
+
+                <button type="submit">
+                    Login
+                </button>
+
             </form>
 
         </div>
+
     </body>
     </html>
     `);
 });
 
-/* ================= REGISTER (DB FIXED) ================= */
-app.post("/register", loginLimiter, csrfProtection, async (req, res) => {
+/* REGISTER */
+app.post(
+    "/register",
+    loginLimiter,
+    csrfProtection,
+    async (req, res) => {
 
-    const { username = "", password = "" } = req.body;
+        const { username = "", password = "" } = req.body;
 
-    if (!isValidUsername(username) || !isValidPassword(password)) {
-        return res.send("Invalid input");
-    }
+        if (
+            !isValidUsername(username) ||
+            !isValidPassword(password)
+        ) {
 
-    try {
-        const hashedPassword = await bcrypt.hash(password, 10);
+            logger.warn("Invalid registration input");
 
-        await db.run(
-            "INSERT INTO users (username, password) VALUES (?, ?)",
-            [username, hashedPassword]
+            return res.send(`
+                Invalid input
+                <br>
+                <a href="/">Back</a>
+            `);
+        }
+
+        const existingUser = users.find(
+            u => u.username === username
         );
 
-        logger.info(`User registered: ${username}`);
+        if (existingUser) {
+
+            return res.send(`
+                User already exists
+                <br>
+                <a href="/">Back</a>
+            `);
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 12);
+
+        users.push({
+            username,
+            password: hashedPassword
+        });
+
+        logger.info(`New user registered: ${username}`);
+
         res.redirect("/");
-
-    } catch (err) {
-        res.send("User already exists or DB error");
     }
-});
-
-/* ================= LOGIN (DB FIXED) ================= */
-app.post("/login", loginLimiter, csrfProtection, async (req, res) => {
-
-    const { username = "", password = "" } = req.body;
-
-    const user = await db.get(
-    "SELECT * FROM users WHERE username = ?",
-    [username]
 );
-    if (!user) return res.send("Invalid credentials");
 
-    const match = await bcrypt.compare(password, user.password);
+/* LOGIN */
+app.post(
+    "/login",
+    loginLimiter,
+    csrfProtection,
+    async (req, res) => {
 
-    if (match) {
-        req.session.user = username;
-        return res.redirect("/dashboard");
+        const { username = "", password = "" } = req.body;
+
+        const user = users.find(
+            u => u.username === username
+        );
+
+        if (!user) {
+
+            logger.warn(
+                `Failed login attempt for: ${username}`
+            );
+
+            return res.send(`
+                Invalid credentials
+                <br>
+                <a href="/">Back</a>
+            `);
+        }
+
+        const isMatch = await bcrypt.compare(
+            password,
+            user.password
+        );
+
+        if (!isMatch) {
+
+            logger.warn(
+                `Failed login attempt for: ${username}`
+            );
+
+            return res.send(`
+                Invalid credentials
+                <br>
+                <a href="/">Back</a>
+            `);
+        }
+
+        req.session.regenerate((err) => {
+
+            if (err) {
+                logger.error("Session regeneration failed");
+                return res.send("Session Error");
+            }
+
+            req.session.user = username;
+
+            logger.info(`User logged in: ${username}`);
+
+            res.redirect("/dashboard");
+        });
     }
+);
 
-    res.send("Invalid credentials");
-});
-
-/* ================= DASHBOARD ================= */
+/* DASHBOARD */
 app.get("/dashboard", (req, res) => {
 
-    if (!req.session.user) return res.redirect("/");
+    if (!req.session.user) {
+        return res.redirect("/");
+    }
 
     res.send(`
     <html>
-    <head>${style}</head>
+
+    <head>
+        <title>Dashboard</title>
+        <link rel="stylesheet" href="/style.css">
+    </head>
+
     <body>
-        <div class="navbar">Welcome ${req.session.user}</div>
-        <div class="container">
-            <h2>Dashboard</h2>
-            <a href="/logout">Logout</a>
+
+        <div class="navbar">
+            Welcome ${req.session.user}
         </div>
+
+        <div class="container">
+
+            <h2>Dashboard</h2>
+
+            <p>Login successful ✅</p>
+
+            <a href="/logout">Logout</a>
+
+        </div>
+
     </body>
     </html>
     `);
 });
 
-/* ================= API ================= */
-app.get("/api/users", apiKeyAuth, async (req, res) => {
+/* API ROUTE */
+app.get("/api/users", (req, res) => {
 
     if (!req.session.user) {
-        return res.status(403).json({ message: "Access denied" });
+
+        logger.warn(
+            "Unauthorized API access attempt"
+        );
+
+        return res.status(403).json({
+            message: "Access Denied"
+        });
     }
 
-    const users = await db.all("SELECT username FROM users");
+    logger.info(
+        `API accessed by: ${req.session.user}`
+    );
 
-    res.json(users);
+    res.json(
+        users.map(u => ({
+            username: u.username
+        }))
+    );
 });
 
-/* ================= LOGOUT ================= */
+/* LOGOUT */
 app.get("/logout", (req, res) => {
-    req.session.destroy(() => res.redirect("/"));
+
+    req.session.destroy(() => {
+
+        res.clearCookie("connect.sid");
+
+        res.redirect("/");
+    });
 });
 
-/* ================= SERVER ================= */
-function startServer() {
+/* CSRF ERROR HANDLER */
+app.use((err, req, res, next) => {
 
-    try {
-        const options = {
-            key: fs.readFileSync("key.pem"),
-            cert: fs.readFileSync("cert.pem")
-        };
+    if (err.code === "EBADCSRFTOKEN") {
 
-        https.createServer(options, app).listen(8443, () => {
-            console.log("🔒 HTTPS https://localhost:8443");
-        });
+        logger.warn(
+            "Invalid CSRF token attempt"
+        );
 
-    } catch (err) {
-        http.createServer(app).listen(3000, () => {
-            console.log("🌐 HTTP http://localhost:3000");
-        });
+        return res.status(403).send(`
+            ❌ Invalid CSRF Token
+            <br>
+            <a href="/">Refresh</a>
+        `);
     }
-}
 
-/* ================= INIT ================= */
-initDB().then(startServer);
+    next(err);
+});
+
+/* GLOBAL ERROR HANDLER */
+app.use((err, req, res, next) => {
+
+    logger.error(err.message);
+
+    res.status(500).send(`
+        Internal Server Error
+    `);
+});
+
+/* ================= HTTPS ================= */
+const httpsOptions = {
+    key: fs.readFileSync("key.pem"),
+    cert: fs.readFileSync("cert.pem")
+};
+
+https.createServer(
+    httpsOptions,
+    app
+).listen(8443, () => {
+
+    console.log(
+        "🔒 HTTPS Server running on https://localhost:8443"
+    );
+});

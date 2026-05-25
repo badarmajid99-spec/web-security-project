@@ -1,0 +1,6 @@
+2026-05-25T12:50:50.864Z [WARN]: Failed login attempt for: username=admin' OR 1=1 --
+2026-05-25T12:51:10.194Z [WARN]: Invalid registration input
+2026-05-25T16:03:29.753Z [WARN]: WAF BLOCKED IP: ::1 URL: /?q=<script>alert(1)</script>
+2026-05-25T16:05:09.843Z [WARN]: WAF BLOCKED IP: ::1 URL: /?file=../../etc/passwd
+2026-05-25T16:15:07.203Z [INFO]: User registered: badar123
+2026-05-25T18:04:40.623Z [WARN]: WAF BLOCKED: ::ffff:127.0.0.1 /register

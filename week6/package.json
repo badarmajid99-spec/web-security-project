@@ -1,0 +1,17 @@
+{
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "csurf": "^1.2.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
+    "express-session": "^1.19.0",
+    "fs": "^0.0.1-security",
+    "helmet": "^8.1.0",
+    "https": "^1.0.0",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^6.0.1",
+    "winston": "^3.19.0"
+  }
+}

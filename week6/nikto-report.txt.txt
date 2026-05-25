@@ -1,0 +1,14 @@
+- Nikto v2.6.0/
++ Target Host: localhost
++ Target Port: 8443
++ GET Unable to connect to localhost:8443.
+- Nikto v2.6.0/
++ Target Host: localhost
++ Target Port: 8443
++ GET /: Uncommon header(s) 'origin-agent-cluster' found, with contents: ?1.
++ SSL Info:           Subject:  /CN=localhost
+                      CN:       localhost
+                      SAN:      localhost
+                      Ciphers:  TLS_AES_256_GCM_SHA384
+                      Issuer:   /CN=localhost
++ OPTIONS OPTIONS: Allowed HTTP Methods: GET, HEAD .
